@@ -1,10 +1,10 @@
 let metrics = {
-  createdTask: 0,
+  createdTasks: 0,
   errors: 0,
 };
 
 export function recordTaskCreated() {
-  metrics.createdTask += 1;
+  metrics.createdTasks += 1;
 }
 
 export function recordError() {

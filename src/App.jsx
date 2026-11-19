@@ -40,13 +40,13 @@ function App({
   function handleCreateTask(taskInput) {
     try {
       const newTask = createTask(taskInput);
-      const updatedTask = [...tasks, newTask];
+      const updatedTasks = [...tasks, newTask];
 
-      saveTasks(updatedTask, {
+      saveTasks(updatedTasks, {
         simulateFailure: simulateStorageFailure,
       });
 
-      setTasks(updatedTask);
+      setTasks(updatedTasks);
 
       recordTaskCreated();
       setMetrics(getMetrics());
