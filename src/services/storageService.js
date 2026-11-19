@@ -1,7 +1,7 @@
 export const TASK_STORAGE_KEY = "task-manager.tasks";
 
 // load from local storage
-export function loadTask() {
+export function loadTasks() {
   try {
     const storedTask = globalThis.localStorage.getItem(TASK_STORAGE_KEY);
     if (!storedTask) {

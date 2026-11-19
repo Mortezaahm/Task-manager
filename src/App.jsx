@@ -1,122 +1,193 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState } from "react";
 
-function App() {
-  const [count, setCount] = useState(0)
+import TaskForm from "./components/TaskForm";
+import TaskList from "./components/TaskList";
+import MonitoringPanel from "./components/MonitoringPanel";
+
+import {
+  createTask,
+  deleteTask,
+  markTaskCompleted,
+} from "./services/taskService";
+import { saveTasks } from "./services/storageService";
+
+import { logger } from "./services/logger";
+import {
+  getMetrics,
+  recordError,
+  recordTaskCreated,
+} from "./services/monitoringService";
+
+import "./App.css";
+
+function App({
+  initialTasks = [],
+  initialMetrics = {
+    createdTasks: 0,
+    errors: 0,
+  },
+  initialError = "",
+}) {
+  const [tasks, setTasks] = useState(initialTasks);
+  const [metrics, setMetrics] = useState(initialMetrics);
+
+  const [error, setError] = useState(initialError);
+  const [success, setSuccess] = useState("");
+
+  const [simulateStorageFailure, setSimulateStorageFailure] = useState(false);
+
+  //create a new task
+  function handleCreateTask(taskInput) {
+    try {
+      const newTask = createTask(taskInput);
+      const updatedTask = [...tasks, newTask];
+
+      saveTasks(updatedTask, {
+        simulateFailure: simulateStorageFailure,
+      });
+
+      setTasks(updatedTask);
+
+      recordTaskCreated();
+      setMetrics(getMetrics());
+      logger.info(`Task created: "${newTask.title}"`);
+
+      setError("");
+      setSuccess(`Task "${newTask.title}" created successfully`);
+
+      return true;
+    } catch (error) {
+      logger.error(`Failed to create task: ${error.message}`);
+
+      recordError();
+      setMetrics(getMetrics());
+      setError(
+        error.message === "Task title is required."
+          ? error.message
+          : `Failed to save task: ${error.message}`,
+      );
+      setSuccess("");
+      return false;
+    }
+  }
+
+  // Mark a task as completed
+  function handleCompleteTask(taskId) {
+    try {
+      const updatedTasks = markTaskCompleted(tasks, taskId);
+      saveTasks(updatedTasks, {
+        simulateFailure: simulateStorageFailure,
+      });
+      setTasks(updatedTasks);
+      const completedTask = tasks.find((task) => task.id === taskId);
+      if (completedTask) {
+        logger.info(`Task completed: "${completedTask.title}"`);
+      }
+      setError("");
+      setSuccess("Task marked as completed.");
+    } catch (error) {
+      logger.error(`Failed to complete task: ${error.message}`);
+
+      recordError();
+      setMetrics(getMetrics());
+
+      setError("Failed to update task. Please try again.");
+      setSuccess("");
+    }
+  }
+
+  // Delete a task
+  function handleDeleteTask(taskId) {
+    const deletedTask = tasks.find((task) => task.id === taskId);
+    if (!deletedTask) {
+      return;
+    }
+
+    try {
+      const updatedTasks = deleteTask(tasks, taskId);
+      saveTasks(updatedTasks, {
+        simulateFailure: simulateStorageFailure,
+      });
+      setTasks(updatedTasks);
+      logger.info(`Task deleted: "${deletedTask.title}"`);
+
+      setError("");
+      setSuccess(`Task "${deletedTask.title}" deleted.`);
+    } catch (error) {
+      logger.error(`Failed to delete task: ${error.message}`);
+
+      recordError();
+      setMetrics(getMetrics());
+
+      setError("Failed to delete task. Please try again.");
+      setSuccess("");
+    }
+  }
+
+  // Enable or disable the simulated storage failure
+  function handleToggleStorageFailure() {
+    setSimulateStorageFailure((currentValue) => !currentValue);
+
+    setError("");
+    setSuccess("");
+  }
+
+  const completedCount = tasks.filter(
+    (task) => task.status === "Completed",
+  ).length;
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
+    <div className="app-container">
+      <header className="app-header">
         <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
+          <span className="eyebrow">WORKSPACE</span>
+          <h1>Task Manager</h1>
+          <p>Organize your work and track your progress.</p>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+        <div className="header-summary">
+          <span>{tasks.length} total tasks</span>
+          <strong>{completedCount} completed</strong>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      </header>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      <main className="dashboard">
+        <div className="main-column">
+          <TaskForm onCreateTask={handleCreateTask} />
+
+          {error && (
+            <div className="message message-error" role="alert">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="message message-success" role="status">
+              {success}
+            </div>
+          )}
+
+          <TaskList
+            tasks={tasks}
+            onComplete={handleCompleteTask}
+            onDelete={handleDeleteTask}
+          />
+        </div>
+
+        <aside className="sidebar">
+          <MonitoringPanel
+            metrics={metrics}
+            simulateStorageFailure={simulateStorageFailure}
+            onToggleStorageFailure={handleToggleStorageFailure}
+          />
+        </aside>
+      </main>
+
+      <footer className="app-footer">
+        Task Manager · Software Quality & Lifecycle Management
+      </footer>
+    </div>
+  );
 }
 
-export default App
+export default App;
