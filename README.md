@@ -332,6 +332,23 @@ The following results were obtained from the completed local test runs and the s
 
 All required automated tests passed in the completed test runs.
 
+### Rationale for Additional VG Tests
+
+The additional tests were selected to cover important edge cases and situations that could cause problems in a real application.
+
+**Additional Unit Tests:**
+
+- **Whitespace-only title:** Verifies that titles containing only spaces are rejected, preventing invalid tasks from being created.
+- **Unknown task ID:** Ensures that attempting to update a non-existing task does not accidentally modify other tasks.
+- **Storage failure:** Verifies that the application correctly handles errors from localStorage instead of silently failing.
+
+**Additional E2E Tests:**
+
+- **Persistence after reload:** Verifies that task data is actually stored and restored correctly after refreshing the browser.
+- **Storage failure and recovery:** Verifies the complete incident handling flow, including error messages, monitoring counters, prevention of unsuccessful task creation, and successful recovery.
+
+These tests were selected to improve reliability, validate error handling, and ensure that the application behaves correctly under both normal and exceptional conditions.
+
 ## Incident Description and Handling
 
 ### Simulated Incident
