@@ -314,6 +314,7 @@ The workflow is triggered by:
 Both jobs run independently. GitHub Actions clearly reports whether each job succeeds or fails.
 
 [View GitHub Actions](https://github.com/Mortezaahm/Task-manager/actions)
+[View a successful Actions](https://github.com/Mortezaahm/Task-manager/actions/runs/44933491560)
 
 ## Test Results
 
